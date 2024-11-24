@@ -3,6 +3,7 @@
     "chrono",
     "dotenv",
     "reqwest",
-    "serde"
+    "serde",
+    "txtui"
   ]
 }
