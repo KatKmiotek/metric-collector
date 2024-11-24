@@ -1,0 +1,10 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release:
+    name: Package release
+    uses: KatKmiotek/reusable-workflows/.github/workflows/rust-release.yml@main
