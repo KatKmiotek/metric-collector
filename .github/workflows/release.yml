@@ -8,3 +8,5 @@ jobs:
   release:
     name: Package release
     uses: KatKmiotek/reusable-workflows/.github/workflows/rust-release.yml@main
+    with:
+      binary_name: metrics
