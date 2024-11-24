@@ -6,6 +6,7 @@ use tracing_subscriber::FmtSubscriber;
 mod github_client;
 mod github_models;
 mod configs;
+mod metric_models;
 
 async fn run() -> Result<(), Box<dyn Error>> {
     info!("Starting application");

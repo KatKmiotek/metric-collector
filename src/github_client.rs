@@ -8,6 +8,7 @@ use tracing::info;
 use crate::{
     configs::GithubConfig,
     github_models::{Conclusion, RunName, WorkflowRunsResponse},
+    metric_models::Metric,
 };
 
 pub struct GithubApiClient {
@@ -50,10 +51,12 @@ impl GithubApiClient {
         }
     }
     pub async fn collect(&self) {
-        self.get_workflow_runs(RunName::PullRequest, Conclusion::Success)
+        let pull_request_success_metrics = self
+            .get_workflow_runs(RunName::PullRequest, Conclusion::Success)
             .await
             .expect("Fetching workflows information failed");
-        self.get_workflow_runs(RunName::Release, Conclusion::Failure)
+        let release_failure_metrics = self
+            .get_workflow_runs(RunName::Release, Conclusion::Failure)
             .await
             .expect("Fetching workflows information failed");
     }
@@ -61,7 +64,7 @@ impl GithubApiClient {
         &self,
         name: RunName,
         conclusion: Conclusion,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<Vec<Metric>, Box<dyn std::error::Error>> {
         let url = format!(
             "{}repos/{}/{}/actions/runs",
             &self.github_url, self.owner, self.repo
@@ -79,18 +82,38 @@ impl GithubApiClient {
         match resp.status() {
             reqwest::StatusCode::OK => {
                 let workflow_runs_response: WorkflowRunsResponse = resp.json().await?;
+                let runs = &workflow_runs_response.workflow_runs;
+                let metrics: Vec<Metric> = runs
+                    .iter()
+                    .filter_map(|run| {
+                        run.run_started_at.map(|started_at| {
+                            let duration = run.updated_at - started_at;
+                            let hours = duration.num_hours();
+                            let minutes = duration.num_minutes();
+                            let seconds = duration.num_seconds() % 60;
+                            Metric {
+                                project_name: self.repo.clone(),
+                                result: conclusion.as_str().to_owned(),
+                                workflow_id: run.id,
+                                workflow_name: name.as_str().to_owned(),
+                                duration: format!("{}.{}.{}", hours, minutes, seconds),
+                            }
+                        })
+                    })
+                    .collect();
+                info!("Collected {:?} metrics", metrics.len());
                 info!(
                     "Successfully fetched {:?} {:?} workflow runs with status {:?}",
                     workflow_runs_response.total_count,
                     name.as_str(),
                     conclusion.as_str()
                 );
+                Ok(metrics)
             }
             status => {
                 let error_body = resp.text().await?;
-                info!("GitHub API error: {} - {}", status, error_body).into()
+                Err(format!("GitHub API error: {} - {}", status, error_body).into())
             }
         }
-        Ok(())
     }
 }
