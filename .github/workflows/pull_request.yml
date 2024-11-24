@@ -1,9 +1,9 @@
 name: Pull Request
 
 on:
-    pull_request:
-        branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
-    checks:
-        uses: KatKmiotek/reusable-workflows/.github/workflows/rust-pull-request.yml@main
+  checks:
+    uses: KatKmiotek/reusable-workflows/.github/workflows/rust-pull-request.yml@main
