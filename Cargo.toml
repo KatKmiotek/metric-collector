@@ -9,7 +9,7 @@ dotenv = "0.14.1"
 reqwest = { version = "0.12.9", features = ["json"]}
 serde = "1.0.215"
 serde_json = "1.0.133"
-tokio = { version = "1.41.1", features = ["full"]} 
+tokio = { version = "1.41.1", features = ["full"]}
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 chrono = { version = "0.4", features = ["serde"] }
