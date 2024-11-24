@@ -51,6 +51,7 @@ impl GithubApiClient {
             client,
         }
     }
+
     pub async fn collect(&self) -> Vec<GitHubMetric> {
         let mut github_metrics: Vec<GitHubMetric> = Vec::new();
         let pull_request_success_metrics = self
