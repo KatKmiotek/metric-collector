@@ -1,3 +1,4 @@
+use chrono::Duration;
 use reqwest::{
     header::{self, ACCEPT, AUTHORIZATION, USER_AGENT},
     Client,
@@ -8,6 +9,7 @@ use tracing::info;
 use crate::{
     configs::GithubConfig,
     github_models::{Conclusion, PullRequest, RunName, WorkflowRunsResponse},
+    helpers::DurationFormatter,
     metric_models::{GitHubMetric, PullRequestMetric, WorkflowMetric},
 };
 
@@ -104,15 +106,12 @@ impl GithubApiClient {
                     .filter_map(|run| {
                         run.run_started_at.map(|started_at| {
                             let duration = run.updated_at - started_at;
-                            let hours = duration.num_hours();
-                            let minutes = duration.num_minutes();
-                            let seconds = duration.num_seconds() % 60;
                             WorkflowMetric {
                                 project_name: self.repo.clone(),
                                 result: conclusion.as_str().to_owned(),
                                 workflow_id: run.id,
                                 workflow_name: name.as_str().to_owned(),
-                                duration: format!("{}.{}.{}", hours, minutes, seconds),
+                                duration: Duration::format_duration(&duration),
                                 event: String::from("Workflow"),
                             }
                         })
@@ -158,13 +157,10 @@ impl GithubApiClient {
                     .filter_map(|pr| {
                         pr.merged_at.map(|merged_at| {
                             let duration = merged_at - pr.created_at;
-                            let hours = duration.num_hours();
-                            let minutes = duration.num_minutes();
-                            let seconds = duration.num_seconds() % 60;
                             PullRequestMetric {
                                 project_name: self.repo.clone(),
                                 pull_request_id: pr.id,
-                                duration: format!("{}.{}.{}", hours, minutes, seconds),
+                                duration: Duration::format_duration(&duration),
                                 event: String::from("PR"),
                             }
                         })
