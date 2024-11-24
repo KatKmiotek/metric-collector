@@ -1,4 +1,3 @@
-use chrono::Duration;
 use reqwest::{
     header::{self, ACCEPT, AUTHORIZATION, USER_AGENT},
     Client,
@@ -87,50 +86,37 @@ impl GithubApiClient {
             "{}repos/{}/{}/actions/runs",
             &self.github_url, self.owner, self.repo
         );
-        let resp = self
-            .client
-            .get(&url)
-            .query(&[("status", conclusion.as_str()), ("name", name.as_str())])
-            .send()
-            .await
-            .map_err(|e| {
-                error!("Failed to send request: {}", e);
-                e
-            })?;
-        match resp.status() {
-            reqwest::StatusCode::OK => {
-                let workflow_runs_response: WorkflowRunsResponse = resp.json().await?;
-                let runs = &workflow_runs_response.workflow_runs;
-                let metrics: Vec<WorkflowMetric> = runs
-                    .iter()
-                    .filter_map(|run| {
-                        run.run_started_at.map(|started_at| {
-                            let duration = run.updated_at - started_at;
-                            WorkflowMetric {
-                                project_name: self.repo.clone(),
-                                result: conclusion.as_str().to_owned(),
-                                workflow_id: run.id,
-                                workflow_name: name.as_str().to_owned(),
-                                duration: Duration::format_duration(&duration),
-                                event: String::from("Workflow"),
-                            }
-                        })
-                    })
-                    .collect();
-                info!("Collected {:?} metrics", metrics.len());
-                info!(
-                    "Successfully fetched {:?} {:?} workflow runs with status {:?}",
-                    workflow_runs_response.total_count,
-                    name.as_str(),
-                    conclusion.as_str()
-                );
-                Ok(metrics)
-            }
-            status => {
-                let error_body = resp.text().await?;
-                Err(format!("GitHub API error: {} - {}", status, error_body).into())
-            }
-        }
+        let workflow_runs_response: WorkflowRunsResponse = self
+            .make_github_request(
+                &url,
+                &[("status", conclusion.as_str()), ("name", name.as_str())],
+            )
+            .await?;
+        let runs = &workflow_runs_response.workflow_runs;
+        let metrics: Vec<WorkflowMetric> = runs
+            .iter()
+            .filter_map(|run| {
+                run.run_started_at.map(|started_at| {
+                    let duration = run.updated_at - started_at;
+                    WorkflowMetric {
+                        project_name: self.repo.clone(),
+                        result: conclusion.as_str().to_owned(),
+                        workflow_id: run.id,
+                        workflow_name: name.as_str().to_owned(),
+                        duration: duration.format_duration(),
+                        event: String::from("Workflow"),
+                    }
+                })
+            })
+            .collect();
+        info!("Collected {:?} metrics", metrics.len());
+        info!(
+            "Successfully fetched {:?} {:?} workflow runs with status {:?}",
+            workflow_runs_response.total_count,
+            name.as_str(),
+            conclusion.as_str()
+        );
+        Ok(metrics)
     }
 
     async fn get_pr_metrics(&self) -> Result<Vec<PullRequestMetric>, Box<dyn std::error::Error>> {
@@ -138,10 +124,44 @@ impl GithubApiClient {
             "{}repos/{}/{}/pulls",
             &self.github_url, self.owner, self.repo
         );
+        let pr_response: Vec<PullRequest> = self
+            .make_github_request(&url, &[("state", "closed")])
+            .await?;
+        let pull_requests = &pr_response;
+        let metrics: Vec<PullRequestMetric> = pull_requests
+            .iter()
+            .filter_map(|pr| {
+                pr.merged_at.map(|merged_at| {
+                    let duration = merged_at - pr.created_at;
+                    PullRequestMetric {
+                        project_name: self.repo.clone(),
+                        pull_request_id: pr.id,
+                        duration: duration.format_duration(),
+                        event: String::from("PR"),
+                    }
+                })
+            })
+            .collect();
+        info!("Collected {:?} metrics", metrics.len());
+        info!(
+            "Successfully fetched {:?} pull requests",
+            pull_requests.len(),
+        );
+        Ok(metrics)
+    }
+
+    async fn make_github_request<T>(
+        &self,
+        url: &str,
+        query_params: &[(&str, &str)],
+    ) -> Result<T, Box<dyn std::error::Error>>
+    where
+        T: serde::de::DeserializeOwned,
+    {
         let resp = self
             .client
-            .get(&url)
-            .query(&[("state", "closed")])
+            .get(url)
+            .query(query_params)
             .send()
             .await
             .map_err(|e| {
@@ -150,28 +170,8 @@ impl GithubApiClient {
             })?;
         match resp.status() {
             reqwest::StatusCode::OK => {
-                let pr_response: Vec<PullRequest> = resp.json().await?;
-                let pull_requests = &pr_response;
-                let metrics: Vec<PullRequestMetric> = pull_requests
-                    .iter()
-                    .filter_map(|pr| {
-                        pr.merged_at.map(|merged_at| {
-                            let duration = merged_at - pr.created_at;
-                            PullRequestMetric {
-                                project_name: self.repo.clone(),
-                                pull_request_id: pr.id,
-                                duration: Duration::format_duration(&duration),
-                                event: String::from("PR"),
-                            }
-                        })
-                    })
-                    .collect();
-                info!("Collected {:?} metrics", metrics.len());
-                info!(
-                    "Successfully fetched {:?} pull requests",
-                    pull_requests.len(),
-                );
-                Ok(metrics)
+                let data: T = resp.json().await?;
+                Ok(data)
             }
             status => {
                 let error_body = resp.text().await?;
