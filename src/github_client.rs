@@ -7,8 +7,8 @@ use tracing::info;
 
 use crate::{
     configs::GithubConfig,
-    github_models::{Conclusion, RunName, WorkflowRunsResponse},
-    metric_models::Metric,
+    github_models::{Conclusion, PullRequest, RunName, WorkflowRunsResponse},
+    metric_models::{GitHubMetric, PullRequestMetric, WorkflowMetric},
 };
 
 pub struct GithubApiClient {
@@ -50,21 +50,37 @@ impl GithubApiClient {
             client,
         }
     }
-    pub async fn collect(&self) {
+    pub async fn collect(&self) -> Vec<GitHubMetric> {
+        let mut github_metrics: Vec<GitHubMetric> = Vec::new();
         let pull_request_success_metrics = self
-            .get_workflow_runs(RunName::PullRequest, Conclusion::Success)
+            .get_workflow_runs_metrics(RunName::PullRequest, Conclusion::Success)
             .await
-            .expect("Fetching workflows information failed");
+            .expect("Fetching workflows information failed")
+            .into_iter()
+            .map(GitHubMetric::Workflow);
         let release_failure_metrics = self
-            .get_workflow_runs(RunName::Release, Conclusion::Failure)
+            .get_workflow_runs_metrics(RunName::Release, Conclusion::Failure)
             .await
-            .expect("Fetching workflows information failed");
+            .expect("Fetching workflows information failed")
+            .into_iter()
+            .map(GitHubMetric::Workflow);
+        github_metrics.extend(pull_request_success_metrics);
+        github_metrics.extend(release_failure_metrics);
+        let pr_metrics = self
+            .get_pr_metrics()
+            .await
+            .expect("Fetching PR metrics failed")
+            .into_iter()
+            .map(GitHubMetric::PullRequest);
+        github_metrics.extend(pr_metrics);
+        github_metrics
     }
-    async fn get_workflow_runs(
+
+    async fn get_workflow_runs_metrics(
         &self,
         name: RunName,
         conclusion: Conclusion,
-    ) -> Result<Vec<Metric>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<WorkflowMetric>, Box<dyn std::error::Error>> {
         let url = format!(
             "{}repos/{}/{}/actions/runs",
             &self.github_url, self.owner, self.repo
@@ -83,7 +99,7 @@ impl GithubApiClient {
             reqwest::StatusCode::OK => {
                 let workflow_runs_response: WorkflowRunsResponse = resp.json().await?;
                 let runs = &workflow_runs_response.workflow_runs;
-                let metrics: Vec<Metric> = runs
+                let metrics: Vec<WorkflowMetric> = runs
                     .iter()
                     .filter_map(|run| {
                         run.run_started_at.map(|started_at| {
@@ -91,12 +107,13 @@ impl GithubApiClient {
                             let hours = duration.num_hours();
                             let minutes = duration.num_minutes();
                             let seconds = duration.num_seconds() % 60;
-                            Metric {
+                            WorkflowMetric {
                                 project_name: self.repo.clone(),
                                 result: conclusion.as_str().to_owned(),
                                 workflow_id: run.id,
                                 workflow_name: name.as_str().to_owned(),
                                 duration: format!("{}.{}.{}", hours, minutes, seconds),
+                                event: String::from("Workflow"),
                             }
                         })
                     })
@@ -107,6 +124,56 @@ impl GithubApiClient {
                     workflow_runs_response.total_count,
                     name.as_str(),
                     conclusion.as_str()
+                );
+                Ok(metrics)
+            }
+            status => {
+                let error_body = resp.text().await?;
+                Err(format!("GitHub API error: {} - {}", status, error_body).into())
+            }
+        }
+    }
+
+    async fn get_pr_metrics(&self) -> Result<Vec<PullRequestMetric>, Box<dyn std::error::Error>> {
+        let url = format!(
+            "{}repos/{}/{}/pulls",
+            &self.github_url, self.owner, self.repo
+        );
+        let resp = self
+            .client
+            .get(&url)
+            .query(&[("state", "closed")])
+            .send()
+            .await
+            .map_err(|e| {
+                error!("Failed to send request: {}", e);
+                e
+            })?;
+        match resp.status() {
+            reqwest::StatusCode::OK => {
+                let pr_response: Vec<PullRequest> = resp.json().await?;
+                let pull_requests = &pr_response;
+                let metrics: Vec<PullRequestMetric> = pull_requests
+                    .iter()
+                    .filter_map(|pr| {
+                        pr.merged_at.map(|merged_at| {
+                            let duration = merged_at - pr.created_at;
+                            let hours = duration.num_hours();
+                            let minutes = duration.num_minutes();
+                            let seconds = duration.num_seconds() % 60;
+                            PullRequestMetric {
+                                project_name: self.repo.clone(),
+                                pull_request_id: pr.id,
+                                duration: format!("{}.{}.{}", hours, minutes, seconds),
+                                event: String::from("PR"),
+                            }
+                        })
+                    })
+                    .collect();
+                info!("Collected {:?} metrics", metrics.len());
+                info!(
+                    "Successfully fetched {:?} pull requests",
+                    pull_requests.len(),
                 );
                 Ok(metrics)
             }
