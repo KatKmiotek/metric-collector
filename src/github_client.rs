@@ -9,7 +9,7 @@ use crate::{
     configs::GithubConfig,
     github_models::{Conclusion, PullRequest, RunName, WorkflowRunsResponse},
     helpers::DurationFormatter,
-    metric_models::{GitHubMetric, PullRequestMetric, WorkflowMetric},
+    metric_models::{MetricType, ProjectMetric},
 };
 
 pub struct GithubApiClient {
@@ -52,28 +52,25 @@ impl GithubApiClient {
         }
     }
 
-    pub async fn collect(&self) -> Vec<GitHubMetric> {
-        let mut github_metrics: Vec<GitHubMetric> = Vec::new();
+    pub async fn collect(&self) -> Vec<ProjectMetric> {
+        let mut github_metrics: Vec<ProjectMetric> = Vec::new();
         let pull_request_success_metrics = self
             .get_workflow_runs_metrics(RunName::PullRequest, Conclusion::Success)
             .await
             .expect("Fetching workflows information failed")
-            .into_iter()
-            .map(GitHubMetric::Workflow);
+            .into_iter();
         let release_failure_metrics = self
             .get_workflow_runs_metrics(RunName::Release, Conclusion::Failure)
             .await
             .expect("Fetching workflows information failed")
-            .into_iter()
-            .map(GitHubMetric::Workflow);
+            .into_iter();
         github_metrics.extend(pull_request_success_metrics);
         github_metrics.extend(release_failure_metrics);
         let pr_metrics = self
             .get_pr_metrics()
             .await
             .expect("Fetching PR metrics failed")
-            .into_iter()
-            .map(GitHubMetric::PullRequest);
+            .into_iter();
         github_metrics.extend(pr_metrics);
         github_metrics
     }
@@ -82,7 +79,7 @@ impl GithubApiClient {
         &self,
         name: RunName,
         conclusion: Conclusion,
-    ) -> Result<Vec<WorkflowMetric>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<ProjectMetric>, Box<dyn std::error::Error>> {
         let url = format!(
             "{}repos/{}/{}/actions/runs",
             &self.github_url, self.owner, self.repo
@@ -94,18 +91,19 @@ impl GithubApiClient {
             )
             .await?;
         let runs = &workflow_runs_response.workflow_runs;
-        let metrics: Vec<WorkflowMetric> = runs
+        let metrics: Vec<ProjectMetric> = runs
             .iter()
             .filter_map(|run| {
                 run.run_started_at.map(|started_at| {
                     let duration = run.updated_at - started_at;
-                    WorkflowMetric {
+                    ProjectMetric {
                         project_name: self.repo.clone(),
-                        result: conclusion.as_str().to_owned(),
-                        workflow_id: run.id,
-                        workflow_name: name.as_str().to_owned(),
+                        result: Some(conclusion.as_str().to_owned()),
+                        workflow_id: Some(run.id),
+                        workflow_name: Some(name.as_str().to_owned()),
                         duration: duration.format_duration(),
-                        event: String::from("Workflow"),
+                        metric_type: MetricType::Workflow,
+                        pull_request_id: None,
                     }
                 })
             })
@@ -120,7 +118,7 @@ impl GithubApiClient {
         Ok(metrics)
     }
 
-    async fn get_pr_metrics(&self) -> Result<Vec<PullRequestMetric>, Box<dyn std::error::Error>> {
+    async fn get_pr_metrics(&self) -> Result<Vec<ProjectMetric>, Box<dyn std::error::Error>> {
         let url = format!(
             "{}repos/{}/{}/pulls",
             &self.github_url, self.owner, self.repo
@@ -129,16 +127,19 @@ impl GithubApiClient {
             .make_github_request(&url, &[("state", "closed")])
             .await?;
         let pull_requests = &pr_response;
-        let metrics: Vec<PullRequestMetric> = pull_requests
+        let metrics: Vec<ProjectMetric> = pull_requests
             .iter()
             .filter_map(|pr| {
                 pr.merged_at.map(|merged_at| {
                     let duration = merged_at - pr.created_at;
-                    PullRequestMetric {
+                    ProjectMetric {
                         project_name: self.repo.clone(),
-                        pull_request_id: pr.id,
+                        pull_request_id: Some(pr.id),
                         duration: duration.format_duration(),
-                        event: String::from("PR"),
+                        metric_type: MetricType::PullRequest,
+                        result: None,
+                        workflow_id: None,
+                        workflow_name: None,
                     }
                 })
             })

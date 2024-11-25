@@ -1,33 +1,21 @@
 use dotenv::dotenv;
 use github_client::GithubApiClient;
-use std::io::Write;
-use std::{
-    error::Error,
-    fs::{self, File},
-    path::Path,
-};
+use std::error::Error;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
+use utils::SaveData;
 mod configs;
 mod github_client;
 mod github_models;
 mod helpers;
 mod metric_models;
+mod utils;
 
 async fn run() -> Result<(), Box<dyn Error>> {
     info!("Starting application");
     let github_api_client = GithubApiClient::new();
     let github_metrics = github_api_client.collect().await;
-    let dir_path = Path::new("output");
-    let file_path = dir_path.join("metrics.txt");
-
-    if !dir_path.exists() {
-        fs::create_dir_all(dir_path)?;
-    }
-    let mut file = File::create(file_path)?;
-    for metric in github_metrics {
-        writeln!(file, "{:?}", metric)?;
-    }
+    SaveData::save_to_file(github_metrics).expect("Saving to file failed");
 
     Ok(())
 }
