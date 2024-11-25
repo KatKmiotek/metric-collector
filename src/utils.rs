@@ -10,7 +10,7 @@ use std::{
 
 pub struct SaveData;
 impl SaveData {
-    pub fn save_to_file(data: Vec<ProjectMetric>) -> Result<(), Box<dyn Error>> {
+    pub fn save_to_file(data: &Vec<ProjectMetric>) -> Result<(), Box<dyn Error>> {
         let dir_path = Path::new("output");
         let file_path = dir_path.join("metrics.txt");
 
