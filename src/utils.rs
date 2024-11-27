@@ -1,7 +1,4 @@
-use serde_json::json;
-
 use crate::metric_models::ProjectMetric;
-use std::io::Write;
 use std::{
     error::Error,
     fs::{self, File},
@@ -17,11 +14,8 @@ impl SaveData {
         if !dir_path.exists() {
             fs::create_dir_all(dir_path)?;
         }
-        let mut file = File::create(file_path)?;
-        for metric in data {
-            let obj = json!(metric);
-            writeln!(file, "{}", serde_json::to_string_pretty(&obj)?)?;
-        }
+        let file = File::create(file_path)?;
+        serde_json::to_writer_pretty(file, data)?;
         Ok(())
     }
 }

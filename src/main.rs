@@ -1,9 +1,11 @@
 use actix_web::{App, HttpServer};
 use controllers::get_metrics;
 use dotenv::dotenv;
+use github_client::GithubApiClient;
 use std::error::Error;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
+use utils::SaveData;
 mod configs;
 mod controllers;
 mod github_client;
@@ -14,8 +16,11 @@ mod utils;
 
 async fn run() -> Result<(), Box<dyn Error>> {
     info!("Starting application");
+    let github_api_client = GithubApiClient::new();
+    let github_metrics = github_api_client.collect().await;
+    SaveData::save_to_file(&github_metrics).expect("Saving to file failed");
     let _ = HttpServer::new(|| App::new().service(get_metrics))
-        .bind(("127.0.0.1", 8080))?
+        .bind(("0.0.0.0", 8080))?
         .run()
         .await;
     Ok(())
