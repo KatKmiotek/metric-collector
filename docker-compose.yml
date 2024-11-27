@@ -17,10 +17,12 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
       - GF_INSTALL_PLUGINS=yesoreyeram-infinity-datasource
     volumes:
-      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+      - grafana-storage:/var/lib/grafana
     networks:
       - metrics-network
+
+volumes:
+  grafana-storage:
 
 networks:
   metrics-network:

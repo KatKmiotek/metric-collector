@@ -1,12 +1,12 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum MetricType {
     Workflow,
     PullRequest,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ProjectMetric {
     pub project_name: String,
     pub metric_type: MetricType,
