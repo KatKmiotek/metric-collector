@@ -7,4 +7,4 @@ on:
 jobs:
   pr-checks:
     name: Pull request checks
-    uses: KatKmiotek/reusable-workflows/.github/workflows/rust-pull-request.yml@main
+    uses: KatKmiotek/reusable-workflows/.github/workflows/rust-pull-request.yml@v1.0.0
