@@ -22,7 +22,7 @@ on:
             version_format:
                 type: string
                 description: Version format to use for tagging
-                default: "${major}.${minor}.${patch}-${{ inputs.environment }}"
+                required: false
 
 env:
   SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
