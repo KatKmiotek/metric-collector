@@ -76,3 +76,8 @@ jobs:
         steps:
             - name: logger
               run: ls
+
+            - name: Clean up
+              if: always()
+              run: |
+                rm -f .env
