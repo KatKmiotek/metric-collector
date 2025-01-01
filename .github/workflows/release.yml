@@ -5,6 +5,28 @@ on:
     branches: [main]
 
 jobs:
+  deploy-qa:
+      name: Deploy to QA
+      uses: ./.github/workflows/deploy.yml
+      secrets: inherit
+      with:
+        environment: qa
+
+  deploy-staging:
+      name: Deploy to Staging
+      uses: ./.github/workflows/deploy.yml
+      secrets: inherit
+      with:
+        environment: staging
+
+  deploy-production:
+      needs: [deploy-staging, deploy-qa]
+      name: Deploy to Production
+      uses: ./.github/workflows/deploy.yml
+      secrets: inherit
+      with:
+        environment: production
+
   release:
     name: Package release
     uses: KatKmiotek/reusable-workflows/.github/workflows/rust-release.yml@v1.0.1
