@@ -99,8 +99,8 @@ jobs:
                 images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
                 tags: |
                     type=raw,value=${{ needs.setup-version.outputs.version }}
-                    type=raw,value=${{ inputs.environment }}-latest
-                    type=raw,value=latest,enable=${{ inputs.environment == 'prod' }}
+                    type=raw,value=${{ inputs.environment }}-latest,enable=${{ github.event_name != 'pull_request' }}
+                    type=raw,value=latest,enable=${{ inputs.environment == 'prod' && github.event_name != 'pull_request' }}
 
             - name: Build and push Docker image
               uses: docker/build-push-action@v6
