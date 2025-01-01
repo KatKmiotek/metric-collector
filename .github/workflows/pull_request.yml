@@ -11,12 +11,13 @@ concurrency:
 
 jobs:
   pr-checks:
-    name: Pull request checks
-    uses: KatKmiotek/reusable-workflows/.github/workflows/rust-pull-request.yml@v1.0.0
+    name: Pull request checks and unit tests
+    uses: KatKmiotek/reusable-workflows/.github/workflows/rust-pull-request.yml@v1.0.1
 
   deploy-dev:
     name: Deploy to dev
     uses: ./.github/workflows/deploy.yml
+    needs: [pr-checks]
     secrets: inherit
     with:
       environment: dev

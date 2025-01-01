@@ -7,6 +7,6 @@ on:
 jobs:
   release:
     name: Package release
-    uses: KatKmiotek/reusable-workflows/.github/workflows/rust-release.yml@v1.0.0
+    uses: KatKmiotek/reusable-workflows/.github/workflows/rust-release.yml@v1.0.1
     with:
       binary_name: metric-collector
