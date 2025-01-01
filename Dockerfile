@@ -2,15 +2,17 @@ FROM rust:1.81-slim
 
 WORKDIR /app
 
-COPY . .
-
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
+COPY Cargo.toml Cargo.lock ./
+
+COPY . .
+
 RUN cargo build --release
+
 EXPOSE 8080
 
-
-CMD ["./target/release/metric-collector"]
+CMD ["/app/target/release/metric-collector"]
