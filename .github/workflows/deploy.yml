@@ -69,6 +69,14 @@ jobs:
             - name: Decrypt secrets file
               run: sops -d --input-type dotenv --output-type dotenv secrets/.env.${{ inputs.environment }} > .env
 
+            - name: logger
+              run: ls -al
+
+            - name: Clean up
+              if: always()
+              run: |
+                rm -f .env
+
 
     build:
         runs-on: ubuntu-latest
