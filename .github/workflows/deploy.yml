@@ -29,6 +29,9 @@ on:
                 description: windows or mac
                 default: mac
 
+env:
+  SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+
 jobs:
     setup-version:
         runs-on: ubuntu-latest
@@ -52,13 +55,24 @@ jobs:
 
     setup-env:
         runs-on: ubuntu-latest
+        needs: [ setup-version]
         steps:
-            - name: get env file
-              run: echo "test"
+            - uses: actions/checkout@v3
+
+            - name: Install SOPS
+              run: |
+                SOPS_VERSION=3.9.3
+                curl -L "https://github.com/mozilla/sops/releases/download/v${SOPS_VERSION}/sops-v${SOPS_VERSION}.linux.amd64" -o sops
+                chmod +x sops
+                sudo mv sops /usr/local/bin/sops
+
+            - name: Decrypt secrets file
+              run: sops -d --input-type dotenv --output-type dotenv secrets/.env.${{ inputs.environment }} > .env
 
 
     build:
         runs-on: ubuntu-latest
+        needs: [setup-env]
         steps:
-            - name: get env file
-              run: echo "build"
+            - name: logger
+              run: ls
