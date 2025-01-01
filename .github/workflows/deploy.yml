@@ -1,4 +1,4 @@
-name: Deploy
+name: Build and Publish
 
 on:
     workflow_dispatch:
@@ -46,7 +46,7 @@ jobs:
                 tag_prefix: "v"
                 major_pattern: "(MAJOR)"
                 minor_pattern: "(MINOR)"
-                version_format: ${{ inputs.version_format || format('${major}.${minor}.${patch}-{0}', inputs.environment) }}
+                version_format: ${{ inputs.version_format || format('{0}.{1}.{2}-{3}', 'major', 'minor', 'patch', inputs.environment) }}
                 search_commit_body: true
 
     build-and-publish:
@@ -108,7 +108,7 @@ jobs:
               uses: docker/build-push-action@v6
               with:
                 context: .
-                push: false
+                push: true
                 tags: ${{ steps.meta.outputs.tags }}
                 labels: ${{ steps.meta.outputs.labels }}
                 cache-from: type=local,src=/tmp/.buildx-cache
