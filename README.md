@@ -16,6 +16,8 @@ App fetches GitHub metrics for given project, exposes them over https to be cons
     - [Project](#project)
     - [Deployment pipeline](#deployment-pipeline)
     - [Static code analysis](#static-code-analysis)
+    - [Dependency updates](#dependency-updates)
+    - [Project secrets](#project-secrets)
 
 
 ## 1. Tutorials
@@ -92,3 +94,20 @@ The project is Metric Collector written in Rust.
 ### Static code analysis
 Static Code Analysis runs `cargo fmt` and `clippy` commands.
 Pre commit hooks can be executed locally after installation - see [guide](#tutorial-4-installing-pre-commit-hooks)
+
+### Dependency updates
+For dependency update this project uses [Renovate](https://docs.renovatebot.com/)
+Pull Requests with updates are scheduled weekly. All awaiting upgrades are listed on GitHub [issue](https://github.com/KatKmiotek/metric-collector/issues/16)
+
+### Project secrets
+For decryption and encryption project is using [SOPS](https://github.com/getsops/sops)
+To encrypt secrets from `./secrets/` AGE Private Key is required.
+Example usage:
+```sh
+export SOPS_AGE_KEY=$(cat key.txt)
+# encryption
+sops -e --input-type dotenv --output-type dotenv .env > secrets/.env.staging
+
+# decryption
+sops -d --input-type dotenv --output-type dotenv secrets/.env.staging > .env.decrypted
+```

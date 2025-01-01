@@ -1,6 +1,7 @@
 {
   "cSpell.words": [
     "actix",
+    "Buildx",
     "chrono",
     "dotenv",
     "reqwest",
