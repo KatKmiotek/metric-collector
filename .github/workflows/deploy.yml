@@ -78,7 +78,7 @@ jobs:
                 platforms: linux/arm64/v8
 
             - name: Cache register
-              uses: actions/cache@v2
+              uses: actions/cache@v4
               with:
                 path: /tmp/.buildx-cache
                 key: ${{ runner.os }}-buildx-${{ hashFiles('**/Dockerfile', 'src/**', 'Cargo.toml') }}
