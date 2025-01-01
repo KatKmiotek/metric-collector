@@ -70,7 +70,7 @@ jobs:
               run: sops -d --input-type dotenv --output-type dotenv secrets/.env.${{ inputs.environment }} > .env
 
             - name: logger
-              run: ls -al
+              run: cat .env
 
             - name: Clean up
               if: always()
