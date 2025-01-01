@@ -76,7 +76,7 @@ jobs:
         steps:
             - uses: actions/checkout@v4
             - name: logger
-              run: ls
+              run: ls -al
 
             - name: Clean up
               if: always()
