@@ -27,6 +27,7 @@ on:
 env:
   SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
   IMAGE_NAME: ${{ github.repository }}
+  DEFAULT_VERSION_FORMAT: '${major}.${minor}.${patch}-${{ inputs.environment }}'
 
 jobs:
     setup-version:
@@ -46,7 +47,7 @@ jobs:
                 tag_prefix: "v"
                 major_pattern: "(MAJOR)"
                 minor_pattern: "(MINOR)"
-                version_format: ${{ inputs.version_format || format('{0}.{1}.{2}-{3}', 'major', 'minor', 'patch', inputs.environment) }}
+                version_format: ${{ inputs.version_format || env.DEFAULT_VERSION_FORMAT }}
                 search_commit_body: true
 
     build-and-publish:
