@@ -14,11 +14,18 @@ jobs:
     name: Pull request checks and unit tests
     uses: KatKmiotek/reusable-workflows/.github/workflows/rust-pull-request.yml@v1.0.1
 
+  setup-version:
+    name: Set dev image version
+    uses: ./.github/workflows/set_version.yml
+    with:
+      version_format: "${major}.${minor}.${patch}-dev-pr${{ github.event.pull_request.number }}"
+
+
   deploy-dev:
     name: Deploy to dev
     uses: ./.github/workflows/deploy.yml
-    needs: [pr-checks]
+    needs: [pr-checks, setup-version]
     secrets: inherit
     with:
       environment: dev
-      version_format: "${major}.${minor}.${patch}-dev-pr${{ github.event.pull_request.number }}"
+      version: ${{ needs.setup-version.outputs.version }}

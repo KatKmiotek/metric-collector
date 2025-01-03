@@ -12,6 +12,11 @@ on:
                     - dev
                     - qa
                     - staging
+                    - production
+            version:
+              type: string
+              required: true
+              description: Version use for tagging in format i.e major.minor.patch-env
 
     workflow_call:
         inputs:
@@ -19,40 +24,18 @@ on:
                 type: string
                 description: Environment to deploy to dev, qa or staging
                 default: dev
-            version_format:
+            version:
                 type: string
-                description: Version format to use for tagging
-                required: false
+                description: Version use for tagging
+                required: true
 
 env:
   SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
   IMAGE_NAME: ${{ github.repository }}
-  DEFAULT_VERSION_FORMAT: '${major}.${minor}.${patch}-${{ inputs.environment }}'
 
 jobs:
-    setup-version:
-        runs-on: ubuntu-latest
-        outputs:
-            version: ${{ steps.get-version.outputs.version }}
-            version_tag: ${{ steps.get-version.outputs.version_tag }}
-        steps:
-          - uses: actions/checkout@v4
-            with:
-                fetch-depth: 0
-
-          - name: Get release version
-            id: get-version
-            uses: paulhatch/semantic-version@v5.4.0
-            with:
-                tag_prefix: "v"
-                major_pattern: "(MAJOR)"
-                minor_pattern: "(MINOR)"
-                version_format: ${{ inputs.version_format || env.DEFAULT_VERSION_FORMAT }}
-                search_commit_body: true
-
     build-and-publish:
         runs-on: ubuntu-latest
-        needs: [setup-version]
         environment: ${{ inputs.environment }}
         env:
             DOCKER_REGISTRY: ${{ vars.REGISTRY }}
@@ -101,7 +84,7 @@ jobs:
               with:
                 images: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}
                 tags: |
-                    type=raw,value=${{ needs.setup-version.outputs.version }}
+                    type=raw,value=${{ inputs.version }}
                     type=raw,value=${{ inputs.environment }}-latest,enable=${{ github.event_name != 'pull_request' }}
                     type=raw,value=latest,enable=${{ inputs.environment == 'production' && github.event_name != 'pull_request' }}
 
