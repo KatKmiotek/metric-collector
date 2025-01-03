@@ -7,6 +7,10 @@ on:
                 type: string
                 description: Version format to use for tagging
                 required: false
+        outputs:
+            version:
+                description: Decided version
+                value: ${{ jobs.setup-version.outputs.version }}
 
 jobs:
     setup-version:
