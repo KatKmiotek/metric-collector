@@ -5,30 +5,40 @@ on:
     branches: [main]
 
 jobs:
+  setup-version:
+    name: Set dev image version
+    uses: ./.github/workflows/set_version.yml
+
   deploy-qa:
       name: Deploy to QA
+      needs: [setup-version]
       uses: ./.github/workflows/deploy.yml
       secrets: inherit
       with:
         environment: qa
+        version: ${{ needs.setup-version.outputs.version }}-qa
 
   deploy-staging:
       name: Deploy to Staging
+      needs: [setup-version]
       uses: ./.github/workflows/deploy.yml
       secrets: inherit
       with:
         environment: staging
+        version: ${{ needs.setup-version.outputs.version }}-staging
 
   deploy-production:
-      needs: [deploy-staging, deploy-qa]
+      needs: [deploy-staging, deploy-qa, setup-version]
       name: Deploy to Production
       uses: ./.github/workflows/deploy.yml
       secrets: inherit
       with:
         environment: production
+        version: ${{ needs.setup-version.outputs.version }}-production
 
   release:
     name: Package release
+    needs: [deploy-production]
     uses: KatKmiotek/reusable-workflows/.github/workflows/rust-release.yml@v1.0.1
     with:
       binary_name: metric-collector
