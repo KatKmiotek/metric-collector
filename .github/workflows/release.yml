@@ -14,9 +14,10 @@ jobs:
   release:
     name: Package release
     needs: [setup-version]
-    uses: KatKmiotek/reusable-workflows/.github/workflows/rust-release.yml@v1.0.2
+    uses: KatKmiotek/reusable-workflows/.github/workflows/rust-release.yml@v1.0.3
     with:
       binary_name: metric-collector
+      bypass: true
 
   deploy:
     name: Deploy to ${{ matrix.environment }}
