@@ -12,7 +12,7 @@ concurrency:
 jobs:
   pr-checks:
     name: Pre-commit checks and unit tests
-    uses: KatKmiotek/reusable-workflows/.github/workflows/rust-pull-request.yml@v1.0.8
+    uses: KatKmiotek/reusable-workflows/.github/workflows/rust-pull-request.yml@v1.0.9
 
   setup-version:
     name: Set dev image version
