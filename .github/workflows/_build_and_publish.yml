@@ -1,4 +1,4 @@
-name: Build and Publish
+name: Build and Publish to Environment
 
 on:
     workflow_dispatch:

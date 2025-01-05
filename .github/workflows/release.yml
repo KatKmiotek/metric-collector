@@ -6,7 +6,7 @@ on:
 
 jobs:
   setup-version:
-    name: Set dev image version
+    name: Tag project
     uses: ./.github/workflows/_set_version.yml
     with:
       tag_repo: true
@@ -14,7 +14,7 @@ jobs:
   deploy-qa:
       name: Deploy to QA
       needs: [setup-version]
-      uses: ./.github/workflows/_deploy.yml
+      uses: ./.github/workflows/_build_and_publish.yml
       secrets: inherit
       with:
         environment: qa
@@ -23,7 +23,7 @@ jobs:
   deploy-staging:
       name: Deploy to Staging
       needs: [setup-version]
-      uses: ./.github/workflows/_deploy.yml
+      uses: ./.github/workflows/_build_and_publish.yml
       secrets: inherit
       with:
         environment: staging
@@ -32,7 +32,7 @@ jobs:
   deploy-production:
       needs: [deploy-staging, deploy-qa, setup-version]
       name: Deploy to Production
-      uses: ./.github/workflows/_deploy.yml
+      uses: ./.github/workflows/_build_and_publish.yml
       secrets: inherit
       with:
         environment: production
@@ -40,7 +40,7 @@ jobs:
 
   release:
     name: Package release
-    needs: [deploy-production]
+    needs: [setup-version]
     uses: KatKmiotek/reusable-workflows/.github/workflows/rust-release.yml@v1.0.2
     with:
       binary_name: metric-collector

@@ -23,7 +23,7 @@ jobs:
 
   deploy-dev:
     name: Deploy to dev
-    uses: ./.github/workflows/_deploy.yml
+    uses: ./.github/workflows/_build_and_publish.yml
     needs: [pr-checks, setup-version]
     secrets: inherit
     with:
