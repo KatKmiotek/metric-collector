@@ -10,9 +10,9 @@ App fetches GitHub metrics for given project, exposes them over https to be cons
       - [Objective](#objective-2)
     - [Tutorial 4: Installing pre-commit hooks](#tutorial-4-installing-pre-commit-hooks)
       - [Objective](#objective-3)
-  - [3. Reference](#3-reference)
+  - [2. Reference](#2-reference)
     - [About idea](#about-idea)
-  - [4. Explanation](#4-explanation)
+  - [3. Explanation](#3-explanation)
     - [Project](#project)
     - [Deployment pipeline](#deployment-pipeline)
     - [Static code analysis](#static-code-analysis)
@@ -75,12 +75,12 @@ Steps:
 
 ---
 
-## 3. Reference
+## 2. Reference
 ### About idea
 The idea behind the project was to build application that can be easy containerized that will run on schedule to collect and serve metrics collected from GitHub, allowing building insightful dashboard into DevEx.
 
 ---
-## 4. Explanation
+## 3. Explanation
 
 ### Project
 The project is Metric Collector written in Rust.
