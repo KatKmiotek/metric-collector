@@ -18,26 +18,20 @@ jobs:
     with:
       binary_name: metric-collector
 
-  deploy-qa:
-      name: Deploy to QA
-      needs: [setup-version, release]
-      uses: ./.github/workflows/_build_and_publish.yml
-      secrets: inherit
-      with:
-        environment: qa
-        version: ${{ needs.setup-version.outputs.version }}-qa
-
-  deploy-staging:
-      name: Deploy to Staging
-      needs: [setup-version, release]
-      uses: ./.github/workflows/_build_and_publish.yml
-      secrets: inherit
-      with:
-        environment: staging
-        version: ${{ needs.setup-version.outputs.version }}-staging
+  deploy:
+    name: Deploy to ${{ matrix.environment }}
+    needs: [setup-version, release]
+    strategy:
+      matrix:
+        environment: [qa, staging]
+    uses: ./.github/workflows/_build_and_publish.yml
+    secrets: inherit
+    with:
+      environment: ${{ matrix.environment }}
+      version: ${{ needs.setup-version.outputs.version }}-${{ matrix.environment }}
 
   deploy-production:
-      needs: [deploy-staging, deploy-qa, setup-version, release]
+      needs: [deploy, setup-version, release]
       name: Deploy to Production
       uses: ./.github/workflows/_build_and_publish.yml
       secrets: inherit
