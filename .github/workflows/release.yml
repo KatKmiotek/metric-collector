@@ -17,7 +17,7 @@ jobs:
     uses: KatKmiotek/reusable-workflows/.github/workflows/rust-release.yml@v1.0.2
     with:
       binary_name: metric-collector
-      release_version: ${{ needs.setup-version.outputs.version }}
+      release_version: ${{ needs.setup-version.outputs.version_tag }}
 
   deploy-qa:
       name: Deploy to QA
