@@ -15,6 +15,9 @@ on:
             version:
                 description: Decided version
                 value: ${{ jobs.setup-version.outputs.version }}
+            version_tag:
+                description: Version tag
+                value: ${{ jobs.setup-version.outputs.version_tag }}
 
 jobs:
     setup-version:
