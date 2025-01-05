@@ -14,11 +14,10 @@ jobs:
   release:
     name: Package release
     needs: [setup-version]
-    uses: KatKmiotek/reusable-workflows/.github/workflows/rust-release.yml@v1.0.5
-    secrets: inherit
+    uses: KatKmiotek/reusable-workflows/.github/workflows/rust-release.yml@v1.0.6
     with:
       binary_name: metric-collector
-      bypass: true
+      release_version: ${{ needs.setup-version.outputs.version_tag }}
 
   deploy:
     name: Deploy to ${{ matrix.environment }}
