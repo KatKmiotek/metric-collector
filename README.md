@@ -87,9 +87,11 @@ The project is Metric Collector written in Rust.
 
 ### Deployment pipeline
 1. **Pull Request**: on pull request event there will be number of checks performed that include pre-commit hooks and tests
-2. **Merge to main**: will trigger building project into Windows and Mac binaries that are uploaded as part of tagged release
-3. **Merge to main**: will also tag repository and update Cargo.toml version
-4. **workflow files**: project is using reusable workflows defined in [repository](https://github.com/KatKmiotek/reusable-workflows)
+2. **Pull Request**: Docker image tagged dev+PR-number will be published to registry
+3. **Merge to main**: will trigger building project into Windows and Mac binaries that are uploaded as part of tagged release
+4. **Merge to main**: will also tag repository and update Cargo.toml version
+5. **Merge to main**: will trigger release of docker image for QA, Staging and Production environment
+6. **workflow files**: project is using reusable workflows defined in [repository](https://github.com/KatKmiotek/reusable-workflows)
 
 ### Static code analysis
 Static Code Analysis runs `cargo fmt` and `clippy` commands.
