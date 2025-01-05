@@ -14,7 +14,7 @@ jobs:
   release:
     name: Package release
     needs: [setup-version]
-    uses: KatKmiotek/reusable-workflows/.github/workflows/rust-release.yml@v1.0.6
+    uses: KatKmiotek/reusable-workflows/.github/workflows/rust-release.yml@v1.0.8
     with:
       binary_name: metric-collector
       release_version: ${{ needs.setup-version.outputs.version_tag }}
