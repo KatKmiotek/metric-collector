@@ -39,7 +39,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .pretty()
         .finish();
     tracing::subscriber::set_global_default(subscriber)
-        .expect("Setting up default subscriber failed");
+        .expect("Setting up the default subscriber failed");
     run().await?;
     Ok(())
 }
